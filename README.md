@@ -1,2 +1,2 @@
 # ITCS-5150-Project
-Project repository.
+Project board: https://github.com/users/samchristoph/projects/1/views/2
