@@ -3,3 +3,8 @@ include
 install
 log
 ros_venv
+ITCS-5150-Project
+resource
+test
+.git
+
