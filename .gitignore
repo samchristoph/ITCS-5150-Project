@@ -8,3 +8,5 @@ resource
 test
 .git
 run_gazebo_launch.sh
+.venv
+enter_env.sh
