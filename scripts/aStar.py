@@ -2,23 +2,20 @@ import pygame
 import heapq
 
 class AStar:
-    def __init__(self, graph="digital"):
+    def __init__(self, agent_radius=10, graph="digital"):
         self.graph_type = graph
         pygame.init()
-        self.display = pygame.display.set_mode((1200, 900))
-        self.display_width = 1200
-        self.display_height = 900 
         self.clock = pygame.time.Clock()
         self.running = False
-        self.agent_radius = 10
+        self.agent_radius = agent_radius
         self.objs = []
         self.forbiden_areas = []
         self.graph_resoultion = 0
 
-    def placeObjects(self, objs):
+    def place_objects(self, objs):
         self.objs = objs
 
-    def generatePath(self, start, dest):
+    def generate_path(self, start, dest):
         start_tile = [start[0] // self.graph_resoultion, start[1] // self.graph_resoultion]
         print("start_tile: ", start_tile)
         dest_tile = [dest[0] // self.graph_resoultion, dest[1] // self.graph_resoultion]
@@ -57,7 +54,12 @@ class AStar:
                 seen.add(next_node)
                 heapq.heappush(front, (f, Node(node.row+i, node.col+j, g, node))) 
 
-    def generateDigitalGraph(self, resolution=20):
+    def generate_digital_graph(self, width, height, resolution):
+        self.display_width = int(width*resolution)
+        self.display_height = int(height*resolution)
+        print(self.display_width)
+        print(self.display_height)
+        self.display = pygame.Surface((self.display_width, self.display_height))
         self.forbiden_areas = []
         self.graph_resoultion = resolution
         for obj in self.objs:
@@ -81,7 +83,7 @@ class AStar:
         self.running = True
         start = [20, 800]
         dest = [1100, 700]
-        path = self.generatePath(start, dest)
+        path = self.generate_path(start, dest)
         print(path)
         while self.running:
             for event in pygame.event.get():
@@ -140,6 +142,6 @@ if __name__ == "__main__":
     print((1,2) in seen)
     aStar = AStar()
     objs = [[20,20,100,300],[300,50,100,200],[60,700,200,50],[1000,500,300,50],[400,300,320,234],[400,320,654,23],[303,540,430,320],[674,875,44,465]]
-    aStar.placeObjects(objs)
-    aStar.generateDigitalGraph()
+    aStar.place_objects(objs)
+    aStar.generate_digital_graph(2000,2000,20)
     aStar.run()
