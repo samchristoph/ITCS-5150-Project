@@ -10,3 +10,4 @@ test
 run_gazebo_launch.sh
 .venv
 enter_env.sh
+__pycache__
