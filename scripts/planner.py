@@ -6,7 +6,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
 import numpy as np
-import tf2_ros
+from pyquaternion import Quaternion
 import concurrent.futures
 from aStar import AStar
 
@@ -23,16 +23,14 @@ class Planner(Node):
         self.subscription_map = self.create_subscription(OccupancyGrid, '/map', self.callback_map, 10)
         self.subscription_odom = self.create_subscription(Odometry, '/odometry', self.callback_odom, 10)
         self.target_publisher = self.create_publisher(Point, '/cur_target', 10)
-        self.timer = self.create_timer(.5, self.timer_callback)
         self.cur_map = None
         self.cur_odom = None
         self.i = 0
         self.cur_target = None
-        self.goal_pos = (1000, 1000)
+        self.goal_pos = (200, 200)
         global limo_radius
         self.path_finder = AStar(agent_radius=limo_radius)
         self.path = None
-        self.transform = tf2_ros.
 
     def timer_callback(self):
         # print(f"{self.i}")
@@ -40,16 +38,16 @@ class Planner(Node):
         self.publish_target()
 
     def publish_target(self):
-        print(self.path)
         if self.cur_map == None or self.cur_odom == None:
             return
         #get data from previous map and odom data
-        origin = self.cur_map.info.origin.position
+        origin_pos = (self.cur_map.info.origin.position.x, self.cur_map.info.origin.position.y)
+        origin_ori = self.cur_map.info.origin.orientation
         resolution = self.cur_map.info.resolution
         width = self.cur_map.info.width
         height = self.cur_map.info.height
         cur_pos = (self.cur_odom.pose.pose.position.x, self.cur_odom.pose.pose.position.y)
-        cur_pos_on_map = 
+        cur_pos_map = origin_to_map(origin_pos, origin_ori,cur_pos)
         data = self.cur_map.data
         #get objects in env from map
         objs = []
@@ -57,7 +55,7 @@ class Planner(Node):
         for i in range(height):
             for j in range(width):
                 if data[(i*width)+j] > obj_threshold :
-                    objs.append((origin.x+(j*resolution), origin.y+(i*resolution), resolution, resolution))
+                    objs.append(((j*resolution), (i*resolution), resolution, resolution))
         #check if any new objects in prev path
         out = Point()
         #TODO implement cur path check but not priority will still work with gen new path every .5s
@@ -72,21 +70,38 @@ class Planner(Node):
         #    return
         #if new objects in prev path gen new path
         self.path_finder.place_objects(objs)
-        print(width, height, resolution)
-        self.path_finder.generate_digital_graph(width, height, int(resolution*100))
-        path = self.path_finder.generate_path(cur_pos, self.goal_pos)
-        self.cut_target_idx = 0
-        out.x = self.path[self.cur_target_idx][0]
-        out.y = self.path[self.cur_target_idx][1]
-        self.target_publisher.publish(out)
+        cur_pos_map = self.path_finder.generate_digital_graph(width, height, int(resolution*100), cur_pos_map, origin_pos)
+        self.path = self.path_finder.generate_path(cur_pos_map, self.goal_pos)
+        self.path = [map_to_origin(origin_pos, point, resolution) for point in self.path]
+        self.cur_target_idx = 0
+        print(self.path[self.cur_target_idx])
+        self.target_publisher.publish(self.path[self.cur_target_idx])
 
         
 
+
     def callback_odom(self, msg):
         self.cur_odom = msg
+        self.publish_target()
+
 
     def callback_map(self, msg):
         self.cur_map = msg
+        self.publish_target()
+
+def map_to_origin(origin, loc_on_map, resolution):
+    out = Point()
+    out.x = float(origin[0]+(loc_on_map[0]*resolution))
+    out.y = float(origin[1]+(loc_on_map[1]*resolution))
+    return out
+
+def origin_to_map(origin_pos, origin_quat, point):
+    q = Quaternion(np.array([origin_quat.x,origin_quat.y,origin_quat.z,origin_quat.w]))
+    point = np.array([point[0], point[1], 0])
+    origin_pos = np.array([origin_pos[0], origin_pos[1], 0])
+    rot_point = q.rotate(point)
+    map_point = rot_point + origin_pos
+    return map_point
 
 def main(args=None):
     print("PLANNER STARTED")
