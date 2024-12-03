@@ -43,7 +43,7 @@ class Mapper(Node):
     def callback_map(self, msg):
         self.get_logger().info('callback_map')
         # match incoming map dimensions
-        if self.map_data_buffer is None or self.map_data_buffer.shape != (msg.info.height, msg.info.width):
+        if self.map_data_buffer is None:
            self.map_data_buffer = np.full((msg.info.height, msg.info.width), obj_nothing)
            self.map_resolution = msg.info.resolution
         incoming_map = np.array(msg.data).reshape(msg.info.height, msg.info.width)
@@ -54,14 +54,15 @@ class Mapper(Node):
         self.get_logger().info('publish_map')
         if self.map_data_buffer is None:
             return
-        map_msg = OccupancyGrid()
-        map_msg.header = Header()
+        msg = OccupancyGrid()
+        msg.header = Header()
         # map_msg.header.stamp = self.get_clock().now().to_msg()
-        map_msg.header.frame_id = 'map'
-        map_msg.info.resolution = self.map_resolution
-        map_msg.info.width = self.map_data_buffer.shape[1]
-        map_msg.info.height = self.map_data_buffer.shape[0]
-        map_msg.info.origin = Pose(
+        msg.header.frame_id = 'map'
+        msg.info.resolution = self.map_resolution
+        print(self.map_data_buffer.shape)
+        msg.info.width = self.map_data_buffer.shape[1]
+        msg.info.height = self.map_data_buffer.shape[0]
+        msg.info.origin = Pose(
             position=Point(x=0.0, y=0.0, z=0.0),
             orientation=Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
         )
@@ -73,18 +74,35 @@ class Mapper(Node):
         # smoothed_map = self.apply_low_pass_filter(self.map_data_buffer)
         normal_map = self.map_data_buffer
         # flatten buffer to a list for publishing
-        map_msg.data = normal_map.flatten().tolist()
-        self.map_processed_publisher.publish(map_msg)
+        msg.data = normal_map.flatten().tolist()
+        self.map_processed_publisher.publish(msg)
         self.get_logger().info('publish_map (finished)')
-    
+
+    def expand_map_if_required(self, robot_x, robot_y, msg):
+        required_width = max(robot_x + msg.info.width // 2, self.map_data_buffer.shape[1])
+        required_height = max(robot_y + msg.info.height // 2, self.map_data_buffer.shape[0])
+        if required_width > self.map_data_buffer.shape[1] or required_height > self.map_data_buffer.shape[0]:
+            new_map = np.full((required_height, required_width), obj_nothing)
+            new_map[:self.map_data_buffer.shape[0], :self.map_data_buffer.shape[1]] = self.map_data_buffer
+            self.map_data_buffer = new_map
+
     def update_map_normal(self, sensor_map, msg):
         self.get_logger().info('update_map_normal')
+        center_x = msg.info.width // 2
+        center_y = msg.info.height // 2
+        robot_x = center_x
+        robot_y = center_y
+        if self.robot_position is not None:
+            robot_x = int(self.robot_position.x / msg.info.resolution)
+            robot_y = int(self.robot_position.y / msg.info.resolution)
+        self.expand_map_if_required(robot_x, robot_y, msg)
         for i in range(msg.info.height):
             for j in range(msg.info.width):
-                if sensor_map[i, j] != -1:  # Only update known cells
-                    distance = np.sqrt((i - 50)**2 + (j - 50)**2) * msg.info.resolution  # Example robot at center
+                if sensor_map[i, j] != obj_nothing:
+                    distance = np.sqrt((i - robot_y)**2 + (j - robot_x)**2) * msg.info.resolution
                     if distance <= 5.0:
-                        self.map_data_buffer[i, j] = sensor_map[i, j]
+                        if self.map_data_buffer[i, j] != obj_obstacle:
+                            self.map_data_buffer[i, j] = sensor_map[i, j]
 
     def update_map_with_raycasting(self, sensor_map):
         self.get_logger().info('update_map_with_raycasting')
