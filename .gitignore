@@ -3,7 +3,7 @@ include
 install
 log
 ros_venv
-ITCS-5150-Project
+itcs_5150_project
 resource
 test
 .git

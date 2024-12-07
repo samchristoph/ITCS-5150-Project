@@ -92,10 +92,6 @@ class AStar:
                     self.graph[row][col] = 1
         return start
 
-
-
-
-
     def inForbidenArea(self, rect):
         for f_area in self.forbiden_areas:
             f_area_rect = pygame.Rect(f_area[0], f_area[1], f_area[2], f_area[3])
@@ -128,5 +124,5 @@ if __name__ == "__main__":
     aStar = AStar()
     objs = [[20,20,100,300],[300,50,100,200],[60,700,200,50],[1000,500,300,50],[400,300,320,234],[400,320,654,23],[303,540,430,320],[674,875,44,465]]
     aStar.place_objects(objs)
-    aStar.generate_digital_graph(2000,2000,20)
+    aStar.generate_digital_graph(2000,2000,20,[0,0],[2000,2000])
     aStar.run()

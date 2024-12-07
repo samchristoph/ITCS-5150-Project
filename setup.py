@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'ITCS-5150-Project'
+package_name = 'itcs_5150_project'
 
 setup(
     name=package_name,
