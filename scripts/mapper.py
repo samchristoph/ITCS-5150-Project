@@ -6,6 +6,7 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
 import numpy as np
 import concurrent.futures
+from aStar import *
 
 # -1 is nothing
 # 100 is an obstacle
@@ -14,7 +15,7 @@ obj_obstacle = 100
 
 class Mapper(Node):
     def __init__(self):
-        super().__init__('map_listener_publisher')
+        super().__init__('mapper')
         # subscriber for the /map topic
         self.subscription_map = self.create_subscription(OccupancyGrid, '/map', self.callback_map, 10)
         # subscriber for the /odom topic
@@ -42,6 +43,9 @@ class Mapper(Node):
 
     def callback_map(self, msg):
         self.get_logger().info('callback_map')
+        arr = occupancy_grid_to_embedded_array(data=msg.data, width=msg.info.width)
+        grid_list = [list(row) for row in arr]
+        print(grid_list)
         # match incoming map dimensions
         if self.map_data_buffer is None:
            self.map_data_buffer = np.full((msg.info.height, msg.info.width), obj_nothing)
@@ -157,6 +161,24 @@ class Mapper(Node):
                 sub_grid = grid[i-1:i+2, j-1:j+2]
                 filtered_grid[i, j] = np.sum(sub_grid * kernel)
         return filtered_grid
+
+
+def occupancy_grid_to_embedded_array(data, width):
+    grid = []
+    for i in range(0, len(data), width):
+        row = data[i:i + width]
+        grid.append(row)
+    return grid
+
+def generate_objects_from_grid(grid, resolution, width, height):
+    objects = []
+    for i in range(height):
+        for j in range(width):
+            if grid[i][j] == 100:
+                x = j * resolution - resolution
+                y = i * resolution - resolution
+                objects.append([x, y, 1 * resolution, 1 * resolution])
+    return objects
 
 def main(args=None):
     print("MAPPER STARTED")

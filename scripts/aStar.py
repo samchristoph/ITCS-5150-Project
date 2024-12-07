@@ -1,6 +1,8 @@
 import pygame
 import heapq
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 class AStar:
     def __init__(self, agent_radius=10, graph="digital"):
@@ -12,7 +14,8 @@ class AStar:
         self.objs = []
         self.forbiden_areas = []
         self.graph_resolution = 0
-        self.display = pygame.display.set_mode((800, 600))
+        # self.directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        # self.display = pygame.display.set_mode((800, 600))
 
     def place_objects(self, objs):
         self.objs = objs
@@ -23,7 +26,7 @@ class AStar:
         dest_tile = [dest[0] // self.graph_resolution, dest[1] // self.graph_resolution]
         frontier = []
         seen = set()
-        cur_node = Node(start_tile[0], start_tile[1], 0, None)
+        cur_node = NodeClass(start_tile[0], start_tile[1], 0, None)
         heapq.heappush(frontier, (0, cur_node)) 
         while len(frontier) != 0:
             _, cur_node = heapq.heappop(frontier)
@@ -46,7 +49,7 @@ class AStar:
                 h = abs(node.row - dest_tile[0]) + abs(node.col - dest_tile[1])
                 g = node.cost + (1 if i == 0 or j == 0 else 1.41)
                 f = g + h
-                next_node = Node(node.row + i, node.col + j, g, node, heuristic=h)
+                next_node = NodeClass(node.row + i, node.col + j, g, node, heuristic=h)
                 seen.add((node.row + i, node.col + j))
                 heapq.heappush(front, (f, next_node))
 
@@ -59,7 +62,8 @@ class AStar:
         for obj in self.objs:
             f_area = [obj[0]-self.agent_radius, obj[1]-self.agent_radius, obj[2]+2*self.agent_radius, obj[3]+2*self.agent_radius]
             self.forbiden_areas.append(f_area)
-        self.graph = [[0 for _ in range(self.display_height // resolution)] for _ in range(self.display_width // resolution)]
+        # self.graph = [[0 for _ in range(self.display_height // resolution)] for _ in range(self.display_width // resolution)]
+        self.graph = [[0 for _ in range(self.display_width // resolution)] for _ in range(self.display_height // resolution)]
 
         if goal[0] > len(self.graph):
             padding = int(len(self.graph) - goal[0]*100)
@@ -106,7 +110,7 @@ class AStar:
             pygame.draw.circle(self.display, (0, 0, 255), (node[0]*self.graph_resolution, node[1]*self.graph_resolution), self.agent_radius)
         pygame.display.update()
 
-class Node:
+class NodeClass:
     def __init__(self, r, c, cost, prev_node, heuristic=0):
         self.row = r
         self.col = c
@@ -134,19 +138,35 @@ class Node:
         return (self.cost + self.heuristic) < (other.cost + other.heuristic)
 
 
-if __name__ == "__main__":
-    seen = set()
-    seen.add((1,2))
-    print((1,2) in seen)
-    start = [0,0]
-    finish = [900,900]
-    aStar = AStar()
-    # objs = [[20,20,100,300],[300,50,100,200],[60,700,200,50],[1000,500,300,50],[400,300,320,234],[400,320,654,23],[303,540,430,320],[674,875,44,465]]
-    objs = []
-    aStar.place_objects(objs)
-    start = aStar.generate_digital_graph(1000,1000,1,start,finish)
-    path = aStar.generate_path(start, finish)
-    if path != None:
-        print(path)
-    else:
-        print("Path not found!")
+# if __name__ == "__main__":
+#     seen = set()
+#     seen.add((1,2))
+#     print((1,2) in seen)
+#     start = [0,0]
+#     finish = [400, 500]
+#     aStar = AStar()
+#     objs = [[50,20,100,300],[300,50,100,200],[60,100,200,50],[60,200,300,50],[400,100,320,234],[400,320,100,23],[303,540,200,320],[674,660,44,200]]
+#     # objs = aStar.generate_objects_from_grid(grid, resolution, width, height)
+#     aStar.place_objects(objs)
+#     start = aStar.generate_digital_graph(1000,1000,1,start,finish)
+#     path = aStar.generate_path(start, finish)
+#     if path != None:
+#         fig, ax = plt.subplots()
+#         x_values = [point[0] for point in path]
+#         y_values = [point[1] for point in path]
+#         agent_radius = 10
+#         f_area = [[obj[0]-agent_radius, obj[1]-agent_radius, obj[2]+2*agent_radius, obj[3]+2*agent_radius] for obj in objs]
+#         for area in f_area:
+#             rect = patches.Rectangle((area[0], area[1]), area[2], area[3], linewidth=1, edgecolor='r', facecolor='none')
+#             ax.add_patch(rect)
+        
+#         ax.plot(x_values, y_values, color='b', marker='o', label='Path', linewidth=1)
+#         ax.set_xlabel('X values')
+#         ax.set_ylabel('Y values')
+#         ax.set_title('Plot of Objects and Path')
+#         ax.grid(True)
+#         plt.show()
+#     else:
+#         print("Path not found!")
+
+
