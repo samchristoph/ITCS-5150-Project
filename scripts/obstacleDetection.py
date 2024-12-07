@@ -53,7 +53,6 @@ class Laser_Scan(Node):
             
         self.detect_objects(close_count)
 
-
     def detect_objects(self, count):
         #Only keeps data from most recent scans. The number of scans is determined by SCAN_BUFFER
         if(len(self.close_counts > SCAN_BUFFER)):
@@ -70,17 +69,14 @@ class Laser_Scan(Node):
             time.sleep(0.5)
             self.command_x_vel(0)
             
-
     def command_x_vel(self, x_vel):
         #publish a message with all
         msg = Twist()
         msg.angular.x = x_vel
         self.cmd_vel_publisher.publish(msg)
         
-
     def normalize_angle(self, angle):
         return np.arctan2(np.sin(angle), np.cos(angle))      
-
 
 
 def main(args=None):
@@ -95,7 +91,6 @@ def main(args=None):
     # when the garbage collector destroys the node object)
     node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

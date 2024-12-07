@@ -77,9 +77,6 @@ class Planner(Node):
         print(self.path[self.cur_target_idx])
         self.target_publisher.publish(self.path[self.cur_target_idx])
 
-        
-
-
     def callback_odom(self, msg):
         self.cur_odom = msg
         self.publish_target()
