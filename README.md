@@ -1,6 +1,16 @@
 # itcs_5150_project
 Project board: https://github.com/users/samchristoph/projects/1/views/2
 
+*Setup*
+Prerequisites:
+  -ROS 2 Humble/Foxy, Python 3.8+, LIMO Pro Framework.
+  -Required ROS 2 packages: geometry_msgs, nav_msgs, sensor_msgs, std_msgs, slam_toolbox.
+Install the Package:
+  cd ~/ros2_ws
+  git clone https://github.com/samchristoph/itcs_5150_project.git src/itcs_5150_project
+  colcon build --packages-select itcs_5150_project
+  source install/setup.bash
+
 In order to run the experiment, the following steps need to be followed:
 - Create an environment, using the LIMO Pro framework (as used in class).
 - Place blocks and other obstacles around said environment, providing the robot with the ability to localize its position.
